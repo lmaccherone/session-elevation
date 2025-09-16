@@ -9,7 +9,7 @@ Status: Discussion-only pre-draft
 
 ## Abstract
 
-This proposal builds on SEP-1364 Elevating MCP Sessions alternative 1, by adding a session resume capability. With this, the WebSocket SEP-1287/1288 can become as simple as the stdio transport specification.
+This proposal builds on SEP-1364 Elevating MCP Sessions alternative 1, by adding a session resume capability. With this, the WebSocket SEP-1287/1288 can become nearly as simple as the stdio transport specification.
 
 It's also written to be compatible with SEP-1442 Make MCP Stateless (by default) which aims to remove initialization. It's try-and-error approach is similarly compatible if initialization remains required or if it becomes optional.
 
@@ -36,7 +36,7 @@ Sessions are **OPTIONAL**. In their absence, servers **MAY** continue to scope t
 
 #### `session/start`
 - A client **MAY** use this method to initiate a new session.
-- If the server supports protocol-level sessions, it **MUST** respond with a unique `sessionId`.
+- If the server supports protocol-level sessions, it **MUST** respond with a unique `sessionId` that is globally unique and cryptographically secure.
 - If the server does not support protocol-level sessions, it **MUST** respond with a method not found error.
 
 **Session Event IDs**  
