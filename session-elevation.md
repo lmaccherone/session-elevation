@@ -19,10 +19,18 @@ This proposal:
 - Allows clients to maintain multiple sessions per server. For example, one session per context window.
 - Introduces three new methods: `session/start`, `session/end`, and `session/resume`, along with standardized session identifiers.
 - Enables clients to resume interrupted sessions on the same transport or on a different transport with catch-up and coalescing semantics.
+- DOES **NOT** deprecate the existing Streamable HTTP ("transport-mode"); instead it adds a *protocol-mode*. A single client/server pair MAY use both modes concurrently in **different** sessions. A given session, however, MUST use exactly one mode (transport-mode OR protocol-mode) for its entire lifetime.
 
 ---
 
 ## Specification
+
+### Terminology (Modes)
+This document defines two session modes:
+- Transport-mode: The existing header-based session semantics available today only on Streamable HTTP (`Mcp-Session-Id` / `Last-Event-ID`).
+- Protocol-mode: The new `session/*` methods plus `sessionEventId` field.
+
+When this document previously used the word "mechanism" in relation to session types, it now uniformly uses the term "mode" for clarity. (The term "mechanism" is still used generically elsewhere, e.g., "another mechanism to rehydrate state".)
 
 ### What is a Session?
 A session is a collection of related interactions between a client and server. Examples of things that might be scoped to a session include:
@@ -184,26 +192,27 @@ On the contrary, sessions may serve as a foundation for least-privilege capabili
 
 The new methods are optional. If a client invokes `session/*` on a server that does not implement them, the server **MUST** return an error. Clients that do not use sessions continue to operate unchanged.
 
-### Migration Path (Streamable HTTP ↔ Protocol-Level Sessions)
+### Session Mode Coexistence and Adoption
 
-This proposal is an alternative to Streamable HTTP’s Mcp-Session-Id and Last-Event-ID. Servers **MAY** support both, but a client **MUST** choose exactly one mode per connection.
+This proposal complements (not deprecates) Streamable HTTP’s `Mcp-Session-Id` / `Last-Event-ID` mode. Servers **MAY** implement:
 
-Existing Streamable HTTP deployments can adopt this proposal incrementally:
+- Transport-mode sessions (header-based; defined only for Streamable HTTP today)
+- Protocol-mode sessions (the `session/*` methods + `sessionEventId`)
 
-- Dual support: Continue honoring Mcp-Session-Id / Last-Event-ID while also implementing session/* methods.
-- Coalescing upgrade: Use MCP-level semantics (e.g., notifications/resources/updated coalescing) when resuming via sessionEventId, even if legacy clients still depend on transport headers.
-- Eventual deprecation (optional): Over time, prefer protocol-level sessions for all transports; potentially deprecate transport-specific session support in a later version of MCP.
+Clients **MAY** operate *both kinds* of sessions with the same server concurrently (e.g., one long-lived transport-mode session plus several protocol-mode sessions) provided each individual session uses exactly one mode for its entire lifetime.
 
-#### Mode Selection and Conflict Handling
+Existing deployments can adopt protocol-mode incrementally:
 
-- Modes (mutually exclusive per connection):
-  - Transport mode: Client uses Mcp-Session-Id and/or Last-Event-ID; client does not invoke `session/*`.
-  - Protocol mode: Client invokes `session/*` and uses `sessionEventId`.
-  - No-session mode: Neither mechanism is used.
+- Dual support: Honor `Mcp-Session-Id` / `Last-Event-ID` *and* expose `session/*`.
+- Prefer protocol semantics where appropriate (e.g., coalescing) without breaking legacy transport-mode users.
+- MCP may later decide to phase down transport-only semantics, but this document does **not** require or presume deprecation.
 
-- Mode selection (first-wins):
-  - If the first session-scoped action is a `session/start`, the connection enters protocol mode. Any subsequent request carrying Mcp-Session-Id and/or Last-Event-ID on this connection **MUST** be rejected with an error.
-  - If the first request arrives with Mcp-Session-Id and/or Last-Event-ID, the connection enters transport mode. The server **MUST NOT** accept `session/*` on that connection and **MUST** return an error if attempted.
+#### Session Mode Selection and Conflicts
 
-- Conflicts:
-  - If both Last-Event-ID and `lastSessionEventId` are supplied (e.g., via mixed client behavior), the server **MUST** reject with an error rather than guess precedence.
+Mode is bound **per session**, not globally per client or per server.
+
+- A session created via `session/start` is protocol-mode; all subsequent resume operations for that `sessionId` **MUST** use `session/resume` and `lastSessionEventId`.
+- A session established implicitly via transport headers (`Mcp-Session-Id`, `Last-Event-ID`) is transport-mode; attempts to manipulate it with `session/*` **MUST** be rejected.
+- Upgrading/downgrading a session’s mode in-place is NOT supported; clients **MAY** end one session and start a new one under the other mode.
+- If a client supplies *both* transport headers and protocol resume parameters for the *same* logical attempt, the server **MUST** reject with an error.
+- Connection multiplexing: A single physical connection **MAY** carry any number of independent sessions (transport-mode and/or protocol-mode) plus unaffiliated traffic.
