@@ -181,7 +181,7 @@ Alternative: Upgrade notifications to calls
 ### 5. Introduce a New Named Construct (e.g., "Conversation")
 Alternative: Define an additive, protocol-level construct with a fresh name ("conversation", "thread", etc.) while leaving the existing Streamable HTTP session term and semantics untouched.
 - Pros: Clear semantic separation; avoids overloading the word "session"; could scope only higher-level chat/context features.
-- Cons: Leaves the current Streamable HTTP "session" scope ambiguity unresolved; introduces two parallel scoping abstractions (session + conversation) that most clients would need to reason about; increases naming and implementation surface (capability negotiation, lifecycle, replay semantics) without clarifying ambiguity around existing sessions.
+- Cons: Leaves the current Streamable HTTP "session" scope ambiguity unresolved; introduces two parallel scoping abstractions (session + conversation) that most clients would need to reason about; increases naming and implementation surface (capability negotiation, lifecycle, replay semantics).
 **Decision:** Reuse the existing term "session" and make the distinction explicit via two enduring modes (transport-mode, protocol-mode). This resolves ambiguity while remaining additive: both modes coexist indefinitely; each actual session selects exactly one mode for its lifetime.
 
 ---
