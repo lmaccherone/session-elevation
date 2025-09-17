@@ -156,7 +156,7 @@ Alternative: Rely on transport-layer features (e.g., Streamable HTTP headers)
 - Streamable HTTP currently supports resumability via headers like Mcp-Session-Id and Last-Event-ID.  
 - However, many transports (WebSockets, stdio) lack a per-message side-channel which means they cannot utilize the same capabilities 
 - The transport layer should be blind to protocol semantics but aspects of sessions and catch-up semantics are inherently intertwined with protocol-level concepts.
-- For example: The transport cannot recognize that three notifications/resources/updated could be collapse to a single notification. Transport-level replay is potentially redundant, especially for idempotent or state-overwriting notifications.  
+- Transport-level replay is potentially redundant, especially for idempotent or state-overwriting notifications. For example: The transport cannot recognize that three `notifications/resources/updated` could be collapsed to a single notification.
 **Decision: Elevate sessions to protocol-level.**
 
 ### 2. Sessions in Initialization (SEP-1287 and SEP-1364 alternative 2)
@@ -177,6 +177,12 @@ Alternative: Upgrade notifications to calls
 - Too disruptive to change the methods to not start with `notifications/`
 - Too confusing to leave them starting with `notifications/` if they are no longer JSON-RPC notifications.
 **Decision: Keep notifications as JSON-RPC notifications and add a stable sessionEventId field for ordering and resumption.**
+
+### 5. Introduce a New Named Construct (e.g., "Conversation")
+Alternative: Define an additive, protocol-level construct with a fresh name ("conversation", "thread", etc.) while leaving the existing Streamable HTTP session term and semantics untouched.
+- Pros: Clear semantic separation; avoids overloading the word "session"; could scope only higher-level chat/context features.
+- Cons: Leaves the current Streamable HTTP "session" scope ambiguity unresolved; introduces two parallel scoping abstractions (session + conversation) that most clients would need to reason about; increases naming and implementation surface (capability negotiation, lifecycle, replay semantics) without clarifying ambiguity around existing sessions.
+**Decision:** Reuse the existing term "session" and make the distinction explicit via two enduring modes (transport-mode, protocol-mode). This resolves ambiguity while remaining additive: both modes coexist indefinitely; each actual session selects exactly one mode for its lifetime.
 
 ---
 
