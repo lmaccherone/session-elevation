@@ -1,6 +1,5 @@
 # Thread Analysis
 
----
 ## Emerging Themes
 
 - Desire to disambiguate "session" (transport vs logical/shared context).
@@ -10,7 +9,6 @@
 - Scaling motivation: decouple logical continuity from single server instance affinity.
 - Possible future need: session multiplexing (especially for STDIO transport).
 
----
 ## Open Questions
 
 1. Do we retain the term "session" for transport while introducing a new term (e.g. conversation) for logical context?

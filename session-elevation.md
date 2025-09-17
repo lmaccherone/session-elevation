@@ -211,8 +211,8 @@ Existing deployments can adopt protocol-mode incrementally:
 
 Mode is bound **per session**, not globally per client or per server.
 
-- A session created via `session/start` is protocol-mode; all subsequent resume operations for that `sessionId` **MUST** use `session/resume` and `lastSessionEventId`.
-- A session established implicitly via transport headers (`Mcp-Session-Id`, `Last-Event-ID`) is transport-mode; attempts to manipulate it with `session/*` **MUST** be rejected.
-- Upgrading/downgrading a session’s mode in-place is NOT supported; clients **MAY** end one session and start a new one under the other mode.
+- A session created via `session/start` is protocol-mode; all subsequent resume operations for that `sessionId` **MUST** use `session/resume`.
+- A session established implicitly via transport headers (`Mcp-Session-Id`) is transport-mode; attempts to manipulate it with `session/*` **MUST** be rejected.
+- Switching a session’s mode in-place is NOT supported.
 - If a client supplies *both* transport headers and protocol resume parameters for the *same* logical attempt, the server **MUST** reject with an error.
 - Connection multiplexing: A single physical connection **MAY** carry any number of independent sessions (transport-mode and/or protocol-mode) plus unaffiliated traffic.
